@@ -1,0 +1,3 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_ticket_priorities;
+DROP MATERIALIZED VIEW IF EXISTS mv_ticket_statuses;
+DROP MATERIALIZED VIEW IF EXISTS mv_departments;
