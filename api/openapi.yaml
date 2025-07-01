@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: Ticket System API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8086/api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Аутентификация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Неверные учётные данные
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /tickets:
+    get:
+      summary: Список тикетов
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status_id
+          schema:
+            type: integer
+        - in: query
+          name: priority_id
+          schema:
+            type: integer
+        - in: query
+          name: assignee_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: department_id
+          schema:
+            type: integer
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: created_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: created_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Массив тикетов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+    post:
+      summary: Создать новый тикет
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTicket'
+      responses:
+        '201':
+          description: Созданный тикет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+
+  /tickets/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Детализация тикета
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Полная информация по тикету
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+        '404':
+          description: Тикет не найден
+    put:
+      summary: Обновить тикет
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTicket'
+      responses:
+        '200':
+          description: Обновлённый тикет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '404':
+          description: Тикет не найден
+    delete:
+      summary: Удалить тикет (soft delete)
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Тикет помечен как удалён
+        '404':
+          description: Тикет не найден
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+          properties:
+            user_id:
+              type: string
+              format: uuid
+            username:
+              type: string
+            role_id:
+              type: string
+              format: uuid
+            department_id:
+              type: integer
+
+    Ticket:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status_id:
+          type: integer
+        priority_id:
+          type: integer
+        creator_id:
+          type: string
+          format: uuid
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - ticket_id
+        - title
+        - status_id
+        - priority_id
+        - creator_id
+        - created_at
+        - updated_at
+
+    NewTicket:
+      type: object
+      required:
+        - title
+        - status_id
+        - priority_id
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status_id:
+          type: integer
+        priority_id:
+          type: integer
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+
+    UpdateTicket:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status_id:
+          type: integer
+        priority_id:
+          type: integer
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+        department_id:
+          type: integer
+          nullable: true
+
+    TicketDetail:
+      allOf:
+        - $ref: '#/components/schemas/Ticket'
+        - type: object
+          properties:
+            history:
+              type: array
+              items:
+                $ref: '#/components/schemas/HistoryEntry'
+            comments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comment'
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attachment'
+
+    HistoryEntry:
+      type: object
+      properties:
+        history_id:
+          type: string
+          format: uuid
+        field_name:
+          type: string
+        old_value:
+          type: string
+          nullable: true
+        new_value:
+          type: string
+          nullable: true
+        changed_at:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        comment_id:
+          type: string
+          format: uuid
+        author_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Attachment:
+      type: object
+      properties:
+        attachment_id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        metadata:
+          type: object
+        uploaded_by:
+          type: string
+          format: uuid
+        uploaded_at:
+          type: string
+          format: date-time
