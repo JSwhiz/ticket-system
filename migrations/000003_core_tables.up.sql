@@ -22,8 +22,7 @@ CREATE TABLE tickets (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at    TIMESTAMPTZ
-) PARTITION BY RANGE (created_at);
+)
 
--- пример одной партиции на июнь 2025
-CREATE TABLE tickets_2025_06 PARTITION OF tickets
-  FOR VALUES FROM ('2025-06-01') TO ('2025-07-01');
+-- CREATE TABLE tickets_2025_06 PARTITION OF tickets
+--   FOR VALUES FROM ('2025-06-01') TO ('2025-07-01');
