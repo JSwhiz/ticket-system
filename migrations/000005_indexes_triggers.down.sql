@@ -1,0 +1,11 @@
+DROP TRIGGER IF EXISTS trg_update_tickets ON tickets;
+DROP FUNCTION IF EXISTS fn_update_timestamp;
+DROP TRIGGER IF EXISTS trg_tickets_search ON tickets;
+DROP INDEX IF EXISTS idx_tickets_search;
+ALTER TABLE tickets DROP COLUMN IF EXISTS search_vector;
+DROP INDEX IF EXISTS idx_tickets_created_status;
+DROP INDEX IF EXISTS idx_tickets_assignee_status_deleted;
+DROP INDEX IF EXISTS idx_tickets_department;
+DROP INDEX IF EXISTS idx_tickets_assignee;
+DROP INDEX IF EXISTS idx_tickets_priority;
+DROP INDEX IF EXISTS idx_tickets_status;
