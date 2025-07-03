@@ -3,6 +3,7 @@ package middleware
 import (
 	"strings"
 	"ticket-system/internal/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		// Удаляем префикс "Bearer " из заголовка
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader { // Если префикс отсутствует
+		if tokenString == authHeader {
 			c.JSON(401, gin.H{"error": "Invalid token format"})
 			c.Abort()
 			return
@@ -61,8 +62,8 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Сохраняем userID в контексте для использования в хендлерах
-		c.Set("userID", userID)
+		// Сохраняем user_id в контексте как строку
+		c.Set("user_id", userID.String())
 		c.Next()
 	}
 }

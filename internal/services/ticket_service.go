@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+	"os"
 	"ticket-system/internal/models"
 	"ticket-system/internal/repository"
 	"time"
@@ -10,6 +12,10 @@ import (
 
 type TicketService struct {
 	ticketRepo *repository.TicketRepository
+}
+
+func (s *TicketService) GetTicketByID(ticketID string) (*models.Ticket, error) {
+	return s.ticketRepo.GetTicketByID(ticketID)
 }
 
 func NewTicketService(ticketRepo *repository.TicketRepository) *TicketService {
@@ -50,4 +56,29 @@ func (s *TicketService) UpdateTicket(ticketID string, updates map[string]interfa
 
 func (s *TicketService) DeleteTicket(ticketID string) error {
 	return s.ticketRepo.DeleteTicket(ticketID)
+}
+
+
+func (s *TicketService) GetAttachmentsByTicketID(ticketID string) ([]*models.TicketAttachment, error) {
+	return s.ticketRepo.GetAttachmentsByTicketID(ticketID)
+}
+
+func (s *TicketService) CreateAttachment(attachment *models.TicketAttachment) error {
+	return s.ticketRepo.CreateAttachment(attachment)
+}
+
+func (s *TicketService) GetAttachmentByID(attachmentID string) (*models.TicketAttachment, error) {
+	return s.ticketRepo.GetAttachmentByID(attachmentID)
+}
+
+func (s *TicketService) DeleteAttachment(attachmentID string) error {
+	attachment, err := s.ticketRepo.GetAttachmentByID(attachmentID)
+	if err != nil {
+		return fmt.Errorf("failed to get attachment: %v", err)
+	}
+	// Удаляем файл с диска
+	if err := os.Remove(attachment.FilePath); err != nil {
+		return fmt.Errorf("failed to delete file: %v", err)
+	}
+	return s.ticketRepo.DeleteAttachment(attachmentID)
 }

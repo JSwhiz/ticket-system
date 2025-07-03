@@ -39,6 +39,10 @@ func main() {
 	ticketService := services.NewTicketService(ticketRepo)
 	ticketHandler := handlers.NewTicketHandler(ticketService, authService)
 
+	commentRepo := repository.NewCommentRepository(dbConn)
+	commentService := services.NewCommentService(commentRepo)
+	commentHandler := handlers.NewCommentHandler(commentService)
+
 	// Настраиваем HTTP-сервер
 	router := gin.Default()
 
@@ -62,9 +66,14 @@ func main() {
 		tickets.GET("", ticketHandler.GetAllTickets)
 		tickets.PATCH("/:id", ticketHandler.UpdateTicket)
 		tickets.DELETE("/:id", ticketHandler.DeleteTicket)
+		tickets.GET("/:id/comments", commentHandler.GetComments)
+		tickets.POST("/:id/comments", commentHandler.CreateComment)
+		tickets.GET("/:id/attachments", ticketHandler.GetAttachments)
+		tickets.POST("/:id/attachments", ticketHandler.UploadAttachment)
+		tickets.GET("/:id/attachments/:att_id", ticketHandler.DownloadAttachment)
+		tickets.DELETE("/:id/attachments/:att_id", ticketHandler.DeleteAttachment)
 	}
 
-	// Запускаем сервер
 	if err := router.Run(":" + cfg.ServerPort); err != nil {
 		fmt.Println("Ошибка запуска сервера:", err)
 		return

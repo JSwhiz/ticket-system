@@ -6,7 +6,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8080:8080"
+      - "8082:8080"
     environment:
       - DB_URL=postgres://dev:dev@postgres:5432/ticket_system?sslmode=disable
       - JWT_SECRET=e7f9G6jK1T+3N5qXb4uR8pW2YzQ0uV1xZ7aC4dE5fI=
