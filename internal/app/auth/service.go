@@ -14,6 +14,7 @@ type User struct {
 	Username	 string `db:"username"`
     RoleID       string `db:"role_id"`
     DepartmentID int    `db:"department_id"`
+	PasswordHash string `db:"password_hash"`
 }
 
 type Service struct {
@@ -22,8 +23,8 @@ type Service struct {
     ttl    time.Duration
 }
 
-func NewService(db *sqlx.DB, jwtSecret string, ttl time.Duration) *Service {
-    return &Service{db: db, secret: jwtSecret, ttl: ttl}
+func NewService(db *sqlx.DB, secret string, ttl time.Duration) *Service {
+    return &Service{db: db, secret: secret, ttl: ttl}
 }
 
 func (s *Service) Authenticate(username, password string) (*User, error) {
@@ -51,14 +52,25 @@ func (s *Service) Authenticate(username, password string) (*User, error) {
     return &user, nil
 }
 
-func (s *Service) Login(username, password string) (string, *User, error) {
-    user, err := s.Authenticate(username, password)
+func (s *Service) Login(usernameOrEmail, password string) (token string, user User, err error) {
+    err = s.db.Get(&user, `
+        SELECT user_id, username, role_id, department_id, password_hash
+          FROM users
+         WHERE username = $1 OR email = $1
+    `, usernameOrEmail)
     if err != nil {
-        return "", nil, err
+        return "", User{}, err
     }
-    token, err := GenerateToken(s.secret, user.ID, s.ttl)
+    if bcrypt.CompareHashAndPassword(
+        []byte(user.PasswordHash),
+        []byte(password),
+    ) != nil {
+        return "", User{}, errors.New("invalid credentials")
+    }
+    token, err = GenerateToken(s.secret, user.ID, user.RoleID, s.ttl)
     if err != nil {
-        return "", nil, err
+        return "", User{}, err
     }
+    user.PasswordHash = ""
     return token, user, nil
 }

@@ -145,3 +145,77 @@ func (r *Repository) Delete(id string) error {
     return err
 }
 
+func (r *Repository) UpdateWithUser(id string, u UpdateTicket, userID string) (Ticket, error) {
+    tx, err := r.db.Beginx()
+    if err != nil {
+        return Ticket{}, err
+    }
+
+    defer func() {
+        if err != nil {
+            tx.Rollback()
+        }
+    }()
+
+    if _, err = tx.Exec(`SET LOCAL app.current_user_id = $1`, userID); err != nil {
+        return Ticket{}, err
+    }
+
+    sets := []string{}
+    args := []interface{}{}
+    i := 1
+
+    if u.Title != nil {
+        sets = append(sets, fmt.Sprintf("title=$%d", i))
+        args = append(args, *u.Title)
+        i++
+    }
+    if u.Description != nil {
+        sets = append(sets, fmt.Sprintf("description=$%d", i))
+        args = append(args, *u.Description)
+        i++
+    }
+    if u.StatusID != nil {
+        sets = append(sets, fmt.Sprintf("status_id=$%d", i))
+        args = append(args, *u.StatusID)
+        i++
+    }
+    if u.PriorityID != nil {
+        sets = append(sets, fmt.Sprintf("priority_id=$%d", i))
+        args = append(args, *u.PriorityID)
+        i++
+    }
+    if u.AssigneeID != nil {
+        sets = append(sets, fmt.Sprintf("assignee_id=$%d", i))
+        args = append(args, *u.AssigneeID)
+        i++
+    }
+    if u.DepartmentID != nil {
+        sets = append(sets, fmt.Sprintf("department_id=$%d", i))
+        args = append(args, *u.DepartmentID)
+        i++
+    }
+
+    if len(sets) == 0 {
+        tx.Rollback()
+        return r.GetByID(id)
+    }
+
+    args = append(args, id)
+    query := fmt.Sprintf(
+        "UPDATE tickets SET %s WHERE ticket_id=$%d AND deleted_at IS NULL RETURNING *",
+        strings.Join(sets, ", "),
+        i,
+    )
+
+    var t Ticket
+    if err = tx.Get(&t, query, args...); err != nil {
+        return Ticket{}, err
+    }
+
+    if err = tx.Commit(); err != nil {
+        return Ticket{}, err
+    }
+
+    return t, nil
+}

@@ -1,6 +1,6 @@
 DO $$
 DECLARE
-  pw_hash TEXT := '$2a$10$7d9L6EoVgT8uEwJ1pQhDzeK2h3XjF4aY6BzoW2EKjUV5RmZ8YtW3O';
+  pw_hash TEXT := '$2a$10$EcCC7UrIRAySBbDuuis/QOfmsvpdbvbClV7iBFTApDwkHqUdxxBLW';
 BEGIN
   INSERT INTO users (
     user_id,

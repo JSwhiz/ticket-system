@@ -8,13 +8,15 @@ import (
 
 type Claims struct {
     UserID string `json:"user_id"`
+	RoleID string `json:"role_id"`
     jwt.RegisteredClaims
 }
 
-func GenerateToken(secret, userID string, ttl time.Duration) (string, error) {
+func GenerateToken(secret, userID, roleID string, ttl time.Duration) (string, error) {
     now := time.Now()
     claims := Claims{
         UserID: userID,
+        RoleID: roleID,
         RegisteredClaims: jwt.RegisteredClaims{
             ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
             IssuedAt:  jwt.NewNumericDate(now),

@@ -344,3 +344,217 @@ components:
         uploaded_at:
           type: string
           format: date-time
+
+paths:
+  /tickets/{id}/history:
+    get:
+      summary: История изменений тикета
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Массив записей истории
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryEntry'
+
+paths:
+  /tickets/{id}/comments:
+    get:
+      summary: Список комментариев тикета
+      description: Возвращает все комментарии для указанного тикета
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: UUID тикета
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Массив комментариев
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Тикет не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Добавить комментарий к тикету
+      description: Создаёт новый комментарий для указанного тикета
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: UUID тикета
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Данные добавляемого комментария
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewComment'
+      responses:
+        '201':
+          description: Созданный комментарий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Неверный формат запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Тикет не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    NewComment:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Текст комментария
+
+    Comment:
+      type: object
+      properties:
+        comment_id:
+          type: string
+          format: uuid
+          description: Идентификатор комментария
+        ticket_id:
+          type: string
+          format: uuid
+          description: Идентификатор тикета
+        author_id:
+          type: string
+          format: uuid
+          description: Идентификатор автора комментария
+        content:
+          type: string
+          description: Текст комментария
+        created_at:
+          type: string
+          format: date-time
+          description: Время создания комментария
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Описание ошибки
+
+paths:
+  /tickets/{id}/attachments:
+    get:
+      summary: Список вложений тикета
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Метаданные вложений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+    post:
+      summary: Загрузить вложение
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Информация по сохранённому файлу
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+
+  /tickets/{id}/attachments/{aid}:
+    get:
+      summary: Скачать вложение
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: aid
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Двоичные данные файла
+          content:
+            application/octet-stream: {}

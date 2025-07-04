@@ -1,31 +1,71 @@
-CREATE TABLE ddl_audit (
-  event_id        BIGSERIAL PRIMARY KEY,
-  event_time      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  user_name       TEXT,
-  command_tag     TEXT,
-  schema_name     TEXT,
-  object_identity TEXT,
-  command_text    TEXT
-);
-
-CREATE OR REPLACE FUNCTION fn_ddl_audit() RETURNS event_trigger AS $$
+-- ================================================
+-- 0006_ticket_history_triggers.up.sql
+-- row-trigger для аудита изменений в tickets
+-- ================================================
+CREATE OR REPLACE FUNCTION fn_ticket_history() RETURNS trigger AS $$
 DECLARE
-  rec record;
+  changed_by UUID := current_setting('app.current_user_id', true)::UUID;
 BEGIN
-  FOR rec IN SELECT * FROM pg_event_trigger_ddl_commands() LOOP
-    INSERT INTO ddl_audit(
-      user_name, command_tag, schema_name, object_identity, command_text
+  IF OLD.title IS DISTINCT FROM NEW.title THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
     ) VALUES (
-      session_user,
-      rec.command_tag,
-      rec.schema_name,
-      rec.object_identity,
-      rec.command
+      OLD.ticket_id, changed_by, 'title',
+      OLD.title::text, NEW.title::text
     );
-  END LOOP;
+  END IF;
+
+  IF OLD.description IS DISTINCT FROM NEW.description THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
+    ) VALUES (
+      OLD.ticket_id, changed_by, 'description',
+      OLD.description, NEW.description
+    );
+  END IF;
+
+  IF OLD.status_id IS DISTINCT FROM NEW.status_id THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
+    ) VALUES (
+      OLD.ticket_id, changed_by, 'status_id',
+      OLD.status_id::text, NEW.status_id::text
+    );
+  END IF;
+
+  IF OLD.priority_id IS DISTINCT FROM NEW.priority_id THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
+    ) VALUES (
+      OLD.ticket_id, changed_by, 'priority_id',
+      OLD.priority_id::text, NEW.priority_id::text
+    );
+  END IF;
+
+  IF OLD.assignee_id IS DISTINCT FROM NEW.assignee_id THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
+    ) VALUES (
+      OLD.ticket_id, changed_by, 'assignee_id',
+      OLD.assignee_id::text, NEW.assignee_id::text
+    );
+  END IF;
+
+  IF OLD.department_id IS DISTINCT FROM NEW.department_id THEN
+    INSERT INTO ticket_history(
+      ticket_id, changed_by, field_name, old_value, new_value
+    ) VALUES (
+      OLD.ticket_id, changed_by, 'department_id',
+      OLD.department_id::text, NEW.department_id::text
+    );
+  END IF;
+
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE EVENT TRIGGER trg_ddl_audit
-  ON ddl_command_end
-  EXECUTE FUNCTION fn_ddl_audit();
+DROP TRIGGER IF EXISTS trg_ticket_history ON tickets;
+CREATE TRIGGER trg_ticket_history
+  AFTER UPDATE ON tickets
+  FOR EACH ROW
+  EXECUTE FUNCTION fn_ticket_history();
